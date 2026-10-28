@@ -1,12 +1,14 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import authRoutes from "./routes/auth.js";
 
 const app = express();
 
 const origins = (process.env.CORS_ORIGINS || "").split(",").filter(Boolean);
 app.use(cors({ origin: origins }));
 app.use(express.json());
+app.use("/auth", authRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
