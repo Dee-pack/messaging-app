@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
+import Avatar from "../components/Avatar";
 
 export default function Users() {
   const { token } = useAuth();
@@ -55,7 +56,8 @@ export default function Users() {
         {users.map((u) => (
           <li key={u.id}>
             <button onClick={() => startChat(u.id)}>
-              {u.displayName || u.username} <small>@{u.username}</small>
+              <Avatar user={u} size={24} /> {u.displayName || u.username}{" "}
+              <small>@{u.username}</small>
             </button>
           </li>
         ))}

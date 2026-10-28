@@ -3,6 +3,7 @@ import { useOutletContext, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
 import { conversationTitle } from "../utils";
+import Avatar from "../components/Avatar";
 
 export default function Thread() {
   const { id } = useParams();
@@ -126,7 +127,10 @@ export default function Thread() {
             className={`message ${m.senderId === user.id ? "mine" : ""}`}
           >
             {m.senderId !== user.id && (
-              <small>{m.sender.displayName || m.sender.username}</small>
+              <small className="message-sender">
+                <Avatar user={m.sender} size={20} />{" "}
+                {m.sender.displayName || m.sender.username}
+              </small>
             )}
             <div>{m.content}</div>
             <small>

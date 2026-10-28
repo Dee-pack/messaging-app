@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
-import { conversationTitle } from "../utils";
+import Avatar from "./Avatar";
+import { conversationAvatarUser, conversationTitle } from "../utils";
 
 export default function AppLayout() {
   const { user, token, logout } = useAuth();
@@ -27,9 +28,13 @@ export default function AppLayout() {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <strong>{user.displayName || user.username}</strong>
+          <div className="me">
+            <Avatar user={user} size={40} />
+            <strong>{user.displayName || user.username}</strong>
+          </div>
           <div>
             <Link to="/users">New chat</Link> ·{" "}
+            <Link to="/profile">Profile</Link> ·{" "}
             <button onClick={logout}>Log out</button>
           </div>
         </div>
@@ -44,12 +49,15 @@ export default function AppLayout() {
             to={`/chat/${c.id}`}
             className="conversation-link"
           >
-            <div>{conversationTitle(c, user)}</div>
-            <small>
-              {c.lastMessage
-                ? c.lastMessage.content || "📷 Image"
-                : "No messages yet"}
-            </small>
+            <Avatar user={conversationAvatarUser(c, user)} size={40} />
+            <div className="conversation-text">
+              <div>{conversationTitle(c, user)}</div>
+              <small>
+                {c.lastMessage
+                  ? c.lastMessage.content || "📷 Image"
+                  : "No messages yet"}
+              </small>
+            </div>
           </NavLink>
         ))}
       </aside>

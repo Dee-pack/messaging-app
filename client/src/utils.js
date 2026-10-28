@@ -4,3 +4,8 @@ export function conversationTitle(conversation, me) {
     const other = conversation.participants.find((p) => p.id !== me.id);
     return other ? other.displayName || other.username : "Unknown user";
 }
+// Who to show an avatar for in the conversation list
+export function conversationAvatarUser(conversation, me) {
+    if (conversation.isGroup) return { displayName: conversation.name || "Group" };
+    return conversation.participants.find((p) => p.id !== me.id) || {};
+}
