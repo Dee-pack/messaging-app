@@ -1,8 +1,11 @@
 import { Route, Routes } from "react-router-dom";
+import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Thread from "./pages/Thread";
+import Users from "./pages/Users";
 
 export default function App() {
   return (
@@ -10,7 +13,11 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Home />} />
+        <Route element={<AppLayout />}>
+          <Route index element={<Home />} />
+          <Route path="users" element={<Users />} />
+          <Route path="chat/:id" element={<Thread />} />
+        </Route>
       </Route>
     </Routes>
   );
