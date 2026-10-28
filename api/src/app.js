@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
+import conversationRoutes from "./routes/conversations.js";
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(cors({ origin: origins }));
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
+app.use("/conversations", conversationRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
