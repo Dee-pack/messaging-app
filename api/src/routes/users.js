@@ -2,6 +2,8 @@ import { Router } from "express";
 import { body, validationResult } from "express-validator";
 import { prisma } from "../db.js";
 import { authenticate } from "../middleware/authenticate.js";
+import multer from "multer";
+import { EXTENSIONS, uploadImage, deleteImageByUrl } from "../storage.js";
 
 const router = Router();
 
@@ -61,6 +63,57 @@ const profileRules = [
         .isURL()
         .withMessage("Avatar must be a valid URL"),
 ];
+
+const upload = multer({
+    storage: multer.memoryStorage(), // keeps the file in RAM, fine for small images
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB; the client shrinks images well below this
+    fileFilter(req, file, cb) {
+        if (!EXTENSIONS[file.mimetype]) return cb(new Error("INVALID_TYPE"));
+        cb(null, true);
+    },
+});
+
+// Turns multer's errors into our usual { errors: [...] } responses
+function handleAvatarUpload(req, res, next) {
+    upload.single("avatar")(req, res, (err) => {
+        if (!err) return next();
+        if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(413).json({ errors: ["Image must be 2 MB or smaller"] });
+        }
+        if (err.message === "INVALID_TYPE") {
+            return res.status(400).json({ errors: ["Only JPEG, PNG, WebP or GIF images are allowed"] });
+        }
+        next(err);
+    });
+}
+
+// POST /users/me/avatar  (multipart form, field name "avatar")
+router.post("/me/avatar", handleAvatarUpload, async (req, res, next) => {
+    if (!req.file) {
+        return res.status(400).json({ errors: ["No image uploaded"] });
+    }
+
+    try {
+        const current = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { avatarUrl: true },
+        });
+
+        const url = await uploadImage(req.file, `avatars/${req.user.id}`);
+
+        const user = await prisma.user.update({
+            where: { id: req.user.id },
+            data: { avatarUrl: url },
+            select: { ...publicUser, email: true },
+        });
+
+        await deleteImageByUrl(current?.avatarUrl); // clean up the previous upload
+
+        res.json({ user });
+    } catch (err) {
+        next(err);
+    }
+});
 
 // PUT /users/me  ->  edit my own profile
 // NOTE: this must be defined before "/:id" or "me" would be treated as an id

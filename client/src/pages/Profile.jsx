@@ -2,15 +2,16 @@ import { useState } from "react";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
 import Avatar from "../components/Avatar";
+import { resizeToJpeg } from "../utils";
 
 export default function Profile() {
   const { user, setUser, token } = useAuth();
   const [displayName, setDisplayName] = useState(user.displayName || "");
   const [bio, setBio] = useState(user.bio || "");
-  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || "");
   const [errors, setErrors] = useState([]);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -21,9 +22,9 @@ export default function Profile() {
       const data = await api("/users/me", {
         method: "PUT",
         token,
-        body: { displayName, bio, avatarUrl },
+        body: { displayName, bio },
       });
-      setUser(data.user); // updates the sidebar and everywhere else immediately
+      setUser(data.user);
       setSaved(true);
     } catch (err) {
       setErrors(err.messages || ["Something went wrong"]);
@@ -32,14 +33,76 @@ export default function Profile() {
     }
   }
 
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    e.target.value = ""; // lets you pick the same file again later
+    if (!file) return;
+
+    setErrors([]);
+    setSaved(false);
+
+    if (!file.type.startsWith("image/")) {
+      setErrors(["Please choose an image file"]);
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const blob = await resizeToJpeg(file);
+      const form = new FormData();
+      form.append("avatar", blob, "avatar.jpg");
+
+      const data = await api("/users/me/avatar", {
+        method: "POST",
+        token,
+        body: form,
+      });
+      setUser(data.user);
+    } catch (err) {
+      setErrors(err.messages || ["Could not upload that image"]);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setErrors([]);
+    setUploading(true);
+    try {
+      const data = await api("/users/me", {
+        method: "PUT",
+        token,
+        body: { avatarUrl: "" },
+      });
+      setUser(data.user);
+    } catch (err) {
+      setErrors(err.messages || ["Something went wrong"]);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="page">
       <h2>Your profile</h2>
 
-      <Avatar
-        user={{ displayName, username: user.username, avatarUrl }}
-        size={96}
-      />
+      <Avatar user={user} size={96} />
+      <div className="avatar-actions">
+        <label>
+          {uploading ? "Uploading…" : "Change photo"}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFile}
+            disabled={uploading}
+          />
+        </label>
+        {user.avatarUrl && (
+          <button type="button" onClick={removeAvatar} disabled={uploading}>
+            Remove photo
+          </button>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit}>
         <p>
@@ -65,16 +128,6 @@ export default function Profile() {
             rows={3}
           />
           <small>{bio.length}/200</small>
-        </label>
-
-        <label>
-          Avatar URL
-          <input
-            type="url"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://example.com/me.png"
-          />
         </label>
 
         {errors.map((msg) => (
