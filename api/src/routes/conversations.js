@@ -2,6 +2,7 @@ import { Router } from "express";
 import { body, validationResult } from "express-validator";
 import { prisma } from "../db.js";
 import { authenticate } from "../middleware/authenticate.js";
+import { withPresence } from "../presence.js";
 
 const router = Router();
 router.use(authenticate);
@@ -56,7 +57,7 @@ router.get("/", async (req, res, next) => {
                 id: c.id,
                 isGroup: c.isGroup,
                 name: c.name,
-                participants: c.participants.map((p) => p.user),
+                participants: c.participants.map((p) => withPresence(p.user)),
                 lastMessage: c.messages[0] ?? null,
                 updatedAt: c.messages[0]?.createdAt ?? c.createdAt,
             }))

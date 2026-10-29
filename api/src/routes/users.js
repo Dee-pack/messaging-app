@@ -4,6 +4,7 @@ import { prisma } from "../db.js";
 import { authenticate } from "../middleware/authenticate.js";
 import multer from "multer";
 import { EXTENSIONS, uploadImage, deleteImageByUrl } from "../storage.js";
+import { withPresence } from "../presence.js";
 
 const router = Router();
 
@@ -40,7 +41,7 @@ router.get("/", async (req, res, next) => {
             take: 50,
         });
 
-        res.json({ users });
+        res.json({ users: users.map(withPresence) });
     } catch (err) {
         next(err);
     }
@@ -115,6 +116,19 @@ router.post("/me/avatar", handleAvatarUpload, async (req, res, next) => {
     }
 });
 
+// POST /users/me/heartbeat  ->  "I'm still here"
+router.post("/me/heartbeat", async (req, res, next) => {
+    try {
+        await prisma.user.update({
+            where: { id: req.user.id },
+            data: { lastSeenAt: new Date() },
+        });
+        res.sendStatus(204);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // PUT /users/me  ->  edit my own profile
 // NOTE: this must be defined before "/:id" or "me" would be treated as an id
 router.put("/me", profileRules, async (req, res, next) => {
@@ -152,7 +166,7 @@ router.get("/:id", async (req, res, next) => {
         const user = await prisma.user.findUnique({ where: { id }, select: publicUser });
         if (!user) return res.status(404).json({ error: "User not found" });
 
-        res.json({ user });
+        res.json({ user: withPresence(user) });
     } catch (err) {
         next(err);
     }

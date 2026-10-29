@@ -50,6 +50,15 @@ export default function AppLayout() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // Tell the server we're online: once now, then every 30 seconds
+  useEffect(() => {
+    const beat = () =>
+      api("/users/me/heartbeat", { method: "POST", token }).catch(() => {});
+    beat();
+    const interval = setInterval(beat, 30000);
+    return () => clearInterval(interval);
+  }, [token]);
+
   function toggleSidebar() {
     const next = !sidebarOpen;
     setSidebarOpen(next);
@@ -101,7 +110,11 @@ export default function AppLayout() {
                 className="conversation-link"
                 onClick={closeOnMobile}
               >
-                <Avatar user={conversationAvatarUser(c, user)} size={40} />
+                <Avatar
+                  user={conversationAvatarUser(c, user)}
+                  size={40}
+                  showStatus
+                />
                 <div className="conversation-text">
                   <div>{conversationTitle(c, user)}</div>
                   <small>

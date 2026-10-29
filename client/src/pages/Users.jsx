@@ -13,9 +13,8 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
 
-  // Debounced search: wait 250ms after the last keystroke
   useEffect(() => {
-    const timeout = setTimeout(async () => {
+    async function load() {
       try {
         const data = await api(`/users?search=${encodeURIComponent(search)}`, {
           token,
@@ -25,8 +24,14 @@ export default function Users() {
       } catch (err) {
         setError(err.message);
       }
-    }, 250);
-    return () => clearTimeout(timeout);
+    }
+
+    const timeout = setTimeout(load, 250); // debounce typing
+    const interval = setInterval(load, 15000); // keep presence fresh
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [search, token]);
 
   async function startChat(userId) {
@@ -43,12 +48,16 @@ export default function Users() {
     }
   }
 
+  // Online people first; the sort is stable, so each group stays alphabetical
+  const sorted = [...users].sort((a, b) => Number(b.online) - Number(a.online));
+
   return (
     <>
       <header className="page-header">
         <MenuButton />
         <h2>Start a chat</h2>
       </header>
+
       <div className="page">
         <input
           type="search"
@@ -57,12 +66,13 @@ export default function Users() {
           onChange={(e) => setSearch(e.target.value)}
         />
         {error && <p role="alert">{error}</p>}
+
         <ul className="user-list">
-          {users.map((u) => (
+          {sorted.map((u) => (
             <li key={u.id}>
               <button onClick={() => startChat(u.id)}>
-                <Avatar user={u} size={24} /> {u.displayName || u.username}{" "}
-                <small>@{u.username}</small>
+                <Avatar user={u} size={28} showStatus />{" "}
+                {u.displayName || u.username} <small>@{u.username}</small>
               </button>
             </li>
           ))}

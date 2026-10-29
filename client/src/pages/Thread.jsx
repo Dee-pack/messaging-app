@@ -99,30 +99,41 @@ export default function Thread() {
     }
   }
 
- if (status === "notfound") {
-  return (
-    <>
-      <header className="page-header">
-        <MenuButton />
-      </header>
-      <div className="page">
-        <p>This conversation doesn't exist, or you're not part of it.</p>
-      </div>
-    </>
-  );
-}
+  if (status === "notfound") {
+    return (
+      <>
+        <header className="page-header">
+          <MenuButton />
+        </header>
+        <div className="page">
+          <p>This conversation doesn't exist, or you're not part of it.</p>
+        </div>
+      </>
+    );
+  }
 
   const conversation = conversations.find((c) => c.id === Number(id));
   const title = conversation ? conversationTitle(conversation, user) : "Chat";
+  const other =
+    conversation && !conversation.isGroup
+      ? conversationAvatarUser(conversation, user)
+      : null;
 
   return (
     <div className="thread" key={id}>
       <header className="thread-header">
         <MenuButton />
         {conversation && (
-          <Avatar user={conversationAvatarUser(conversation, user)} size={36} />
+          <Avatar
+            user={conversationAvatarUser(conversation, user)}
+            size={36}
+            showStatus
+          />
         )}
-        <h2>{title}</h2>
+        <div>
+          <h2>{title}</h2>
+          {other?.online && <small className="status-text">Online</small>}
+        </div>
       </header>
 
       <div className="messages">
