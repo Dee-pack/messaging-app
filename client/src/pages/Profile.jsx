@@ -3,7 +3,7 @@ import { useAuth } from "../AuthContext";
 import { api } from "../api";
 import Avatar from "../components/Avatar";
 import { resizeToJpeg } from "../utils";
-import { Link } from "react-router-dom";
+import MenuButton from "../components/MenuButton";
 
 export default function Profile() {
   const { user, setUser, token } = useAuth();
@@ -84,72 +84,73 @@ export default function Profile() {
   }
 
   return (
-    <div className="page">
-      <Link to="/" className="back">
-        ← Chats
-      </Link>
-      <h2>Your profile</h2>
+    <>
+      <header className="page-header">
+        <MenuButton />
+        <h2>Your profile</h2>
+      </header>
+      <div className="page">
+        <Avatar user={user} size={96} />
+        <div className="avatar-actions">
+          <label>
+            {uploading ? "Uploading…" : "Change photo"}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFile}
+              disabled={uploading}
+            />
+          </label>
+          {user.avatarUrl && (
+            <button
+              className="secondary"
+              type="button"
+              onClick={removeAvatar}
+              disabled={uploading}
+            >
+              Remove photo
+            </button>
+          )}
+        </div>
 
-      <Avatar user={user} size={96} />
-      <div className="avatar-actions">
-        <label>
-          {uploading ? "Uploading…" : "Change photo"}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFile}
-            disabled={uploading}
-          />
-        </label>
-        {user.avatarUrl && (
-          <button
-            className="secondary"
-            type="button"
-            onClick={removeAvatar}
-            disabled={uploading}
-          >
-            Remove photo
-          </button>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <p>
-          Username: <strong>@{user.username}</strong> · {user.email}
-        </p>
-
-        <label>
-          Display name
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            maxLength={40}
-            required
-          />
-        </label>
-
-        <label>
-          Bio
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            maxLength={200}
-            rows={3}
-          />
-          <small>{bio.length}/200</small>
-        </label>
-
-        {errors.map((msg) => (
-          <p key={msg} role="alert">
-            {msg}
+        <form onSubmit={handleSubmit}>
+          <p>
+            Username: <strong>@{user.username}</strong> · {user.email}
           </p>
-        ))}
-        {saved && <p>Profile saved.</p>}
 
-        <button type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Save changes"}
-        </button>
-      </form>
-    </div>
+          <label>
+            Display name
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={40}
+              required
+            />
+          </label>
+
+          <label>
+            Bio
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              maxLength={200}
+              rows={3}
+            />
+            <small>{bio.length}/200</small>
+          </label>
+
+          {errors.map((msg) => (
+            <p key={msg} role="alert">
+              {msg}
+            </p>
+          ))}
+          {saved && <p>Profile saved.</p>}
+
+          <button type="submit" disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+        </form>
+      </div>
+    </>
   );
 }

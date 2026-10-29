@@ -4,6 +4,7 @@ import { api } from "../api";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import { conversationAvatarUser, conversationTitle } from "../utils";
+import MenuButton from "../components/MenuButton";
 
 export default function Thread() {
   const { id } = useParams();
@@ -98,23 +99,26 @@ export default function Thread() {
     }
   }
 
-  if (status === "notfound") {
-    return (
+ if (status === "notfound") {
+  return (
+    <>
+      <header className="page-header">
+        <MenuButton />
+      </header>
       <div className="page">
         <p>This conversation doesn't exist, or you're not part of it.</p>
       </div>
-    );
-  }
+    </>
+  );
+}
 
   const conversation = conversations.find((c) => c.id === Number(id));
   const title = conversation ? conversationTitle(conversation, user) : "Chat";
 
   return (
-    <div className="thread">
+    <div className="thread" key={id}>
       <header className="thread-header">
-        <Link to="/" className="back" aria-label="Back to chats">
-          ←
-        </Link>
+        <MenuButton />
         {conversation && (
           <Avatar user={conversationAvatarUser(conversation, user)} size={36} />
         )}

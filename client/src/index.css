@@ -6,11 +6,15 @@
     --muted: #6b7280;
     --primary: #4f46e5;
     --primary-contrast: #ffffff;
+    --link: #4f46e5;
     --bubble-other: #eceef2;
     --bubble-mine: #4f46e5;
     --bubble-mine-text: #ffffff;
     --danger: #b42318;
     --radius: 12px;
+    --sidebar-width: 320px;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --dur: 0.3s;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +25,7 @@
         --text: #e8eaed;
         --muted: #9aa3af;
         --primary: #6366f1;
+        --link: #9aa2ff;
         --bubble-other: #242a32;
         --bubble-mine: #6366f1;
         --danger: #f97066;
@@ -48,12 +53,37 @@ body {
 }
 
 a {
-    color: var(--primary);
+    color: var(--link);
 }
 
 [role="alert"] {
     color: var(--danger);
     margin: 0;
+}
+
+/* ---------- Animations ---------- */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes pop-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 /* ---------- Form controls ---------- */
@@ -71,12 +101,14 @@ textarea {
     border-radius: 8px;
     background: var(--bg);
     color: inherit;
+    transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
 
 input:focus,
 textarea:focus {
-    outline: 2px solid var(--primary);
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 button {
@@ -87,6 +119,15 @@ button {
     color: var(--primary-contrast);
     font-weight: 600;
     cursor: pointer;
+    transition: transform 0.1s var(--ease), filter 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+button:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+button:active:not(:disabled) {
+    transform: scale(0.96);
 }
 
 button:disabled {
@@ -100,11 +141,92 @@ button.secondary {
     border: 1px solid var(--border);
 }
 
-.link-button {
-    background: none;
-    color: var(--primary);
+/* Round icon-only buttons (the hamburger) */
+.icon-button {
+    width: 40px;
+    height: 40px;
     padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: transparent;
+    color: var(--text);
+    border-radius: 10px;
+}
+
+.icon-button:hover:not(:disabled) {
+    background: var(--surface);
+    filter: none;
+}
+
+/* The hamburger morphs into an X while the sidebar is open */
+.burger {
+    position: relative;
+    display: block;
+    width: 20px;
+    height: 14px;
+}
+
+.burger span {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform var(--dur) var(--ease), top var(--dur) var(--ease), opacity 0.2s var(--ease);
+}
+
+.burger span:nth-child(1) {
+    top: 0;
+}
+
+.burger span:nth-child(2) {
+    top: 6px;
+}
+
+.burger span:nth-child(3) {
+    top: 12px;
+}
+
+.icon-button[aria-expanded="true"] .burger span:nth-child(1) {
+    top: 6px;
+    transform: rotate(45deg);
+}
+
+.icon-button[aria-expanded="true"] .burger span:nth-child(2) {
+    opacity: 0;
+}
+
+.icon-button[aria-expanded="true"] .burger span:nth-child(3) {
+    top: 6px;
+    transform: rotate(-45deg);
+}
+
+/* Pill-shaped links and buttons in the sidebar */
+.nav-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.85rem;
     font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s var(--ease), border-color 0.15s var(--ease), transform 0.1s var(--ease);
+}
+
+.nav-pill:hover:not(:disabled) {
+    background: var(--bg);
+    border-color: var(--primary);
+    filter: none;
+}
+
+.nav-pill:active {
+    transform: scale(0.95);
 }
 
 /* ---------- Login and register ---------- */
@@ -112,6 +234,7 @@ button.secondary {
     max-width: 380px;
     margin: 0 auto;
     padding: 3rem 1.25rem;
+    animation: fade-in 0.35s var(--ease);
 }
 
 .auth form {
@@ -132,16 +255,36 @@ button.secondary {
 /* ---------- App layout ---------- */
 .app {
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: var(--sidebar-width) 1fr;
     height: 100dvh;
+    transition: grid-template-columns var(--dur) var(--ease);
 }
 
+.app.sidebar-closed {
+    grid-template-columns: 0 1fr;
+}
+
+/* The sidebar column shrinks to 0; the inner panel keeps its width and is clipped,
+   so its content slides out instead of being squashed */
 .sidebar {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--surface);
+}
+
+.app.sidebar-closed .sidebar {
+    visibility: hidden;
+    /* keeps hidden links out of the tab order */
+    transition: visibility 0s var(--dur);
+}
+
+.sidebar-inner {
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    width: var(--sidebar-width);
+    height: 100%;
     border-right: 1px solid var(--border);
-    background: var(--surface);
 }
 
 .sidebar-header {
@@ -153,14 +296,14 @@ button.secondary {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.75rem;
 }
 
 .sidebar-nav {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 1rem;
-    font-size: 0.9rem;
+    gap: 0.5rem;
 }
 
 .conversations {
@@ -180,6 +323,9 @@ button.secondary {
     padding: 0.7rem 1rem;
     text-decoration: none;
     color: inherit;
+    box-shadow: inset 0 0 0 var(--primary);
+    transition: background 0.15s var(--ease), box-shadow 0.2s var(--ease);
+    animation: fade-in 0.3s var(--ease);
 }
 
 .conversation-link:hover {
@@ -203,6 +349,10 @@ button.secondary {
     white-space: nowrap;
 }
 
+.backdrop {
+    display: none;
+}
+
 .main {
     display: flex;
     flex-direction: column;
@@ -213,6 +363,7 @@ button.secondary {
 
 .page {
     padding: 1.25rem;
+    animation: fade-in 0.3s var(--ease);
 }
 
 .page form {
@@ -220,6 +371,28 @@ button.secondary {
     flex-direction: column;
     gap: 1rem;
     max-width: 420px;
+}
+
+.thread-header,
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.page-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg);
+}
+
+.thread-header h2,
+.page-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
 }
 
 /* ---------- Avatars ---------- */
@@ -244,19 +417,7 @@ button.secondary {
     flex-direction: column;
     height: 100%;
     min-height: 0;
-}
-
-.thread-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.thread-header h2 {
-    margin: 0;
-    font-size: 1.05rem;
+    animation: fade-in 0.25s var(--ease);
 }
 
 .messages {
@@ -275,13 +436,16 @@ button.secondary {
     border-radius: var(--radius);
     background: var(--bubble-other);
     align-self: flex-start;
+    transform-origin: bottom left;
     overflow-wrap: anywhere;
+    animation: pop-in 0.22s var(--ease);
 }
 
 .message.mine {
     background: var(--bubble-mine);
     color: var(--bubble-mine-text);
     align-self: flex-end;
+    transform-origin: bottom right;
 }
 
 .message small {
@@ -330,8 +494,9 @@ button.secondary {
     text-align: left;
 }
 
-.user-list button:hover {
+.user-list button:hover:not(:disabled) {
     background: var(--surface);
+    filter: none;
 }
 
 /* ---------- Profile ---------- */
@@ -350,37 +515,81 @@ button.secondary {
     color: var(--primary-contrast);
     font-weight: 600;
     font-size: 0.9rem;
+    transition: transform 0.1s var(--ease), filter 0.15s var(--ease);
+}
+
+.avatar-actions label:hover {
+    filter: brightness(1.1);
+}
+
+.avatar-actions label:active {
+    transform: scale(0.96);
 }
 
 .avatar-actions input[type="file"] {
     display: none;
 }
 
-/* ---------- Phones: one panel at a time ---------- */
-.back {
-    display: none;
-    text-decoration: none;
-    font-size: 1.1rem;
-}
-
+/* ---------- Phones: the sidebar becomes a sliding drawer ---------- */
 @media (max-width: 700px) {
-    .app {
+
+    .app,
+    .app.sidebar-closed {
         grid-template-columns: 1fr;
     }
 
-    .app.show-main .sidebar {
-        display: none;
+    .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 20;
+        width: min(86vw, 340px);
+        transform: translateX(-100%);
+        transition: transform var(--dur) var(--ease);
     }
 
-    .app.show-list .main {
-        display: none;
+    .app.sidebar-open .sidebar {
+        transform: none;
+        box-shadow: 0 0 30px rgb(0 0 0 / 0.35);
     }
 
-    .back {
-        display: inline-block;
+    .app.sidebar-closed .sidebar {
+        transition: transform var(--dur) var(--ease), visibility 0s var(--dur);
+    }
+
+    .sidebar-inner {
+        width: 100%;
+    }
+
+    .backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: rgb(0 0 0 / 0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--dur) var(--ease);
+    }
+
+    .app.sidebar-open .backdrop {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .message {
         max-width: 85%;
+    }
+}
+
+/* ---------- Respect "reduce motion" ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
     }
 }

@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
 import Avatar from "../components/Avatar";
-import { Link } from "react-router-dom";
+import MenuButton from "../components/MenuButton";
 
 export default function Users() {
   const { token } = useAuth();
@@ -44,29 +44,31 @@ export default function Users() {
   }
 
   return (
-    <div className="page">
-      <Link to="/" className="back">
-        ← Chats
-      </Link>
-      <h2>Start a chat</h2>
-      <input
-        type="search"
-        placeholder="Search users…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      {error && <p role="alert">{error}</p>}
-      <ul className="user-list">
-        {users.map((u) => (
-          <li key={u.id}>
-            <button onClick={() => startChat(u.id)}>
-              <Avatar user={u} size={24} /> {u.displayName || u.username}{" "}
-              <small>@{u.username}</small>
-            </button>
-          </li>
-        ))}
-      </ul>
-      {users.length === 0 && <p>No users found.</p>}
-    </div>
+    <>
+      <header className="page-header">
+        <MenuButton />
+        <h2>Start a chat</h2>
+      </header>
+      <div className="page">
+        <input
+          type="search"
+          placeholder="Search users…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {error && <p role="alert">{error}</p>}
+        <ul className="user-list">
+          {users.map((u) => (
+            <li key={u.id}>
+              <button onClick={() => startChat(u.id)}>
+                <Avatar user={u} size={24} /> {u.displayName || u.username}{" "}
+                <small>@{u.username}</small>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {users.length === 0 && <p>No users found.</p>}
+      </div>
+    </>
   );
 }
