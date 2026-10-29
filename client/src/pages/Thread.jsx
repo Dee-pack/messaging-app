@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useOutletContext, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
-import { conversationTitle } from "../utils";
+import { Link, useOutletContext, useParams } from "react-router-dom";
 import Avatar from "../components/Avatar";
+import { conversationAvatarUser, conversationTitle } from "../utils";
 
 export default function Thread() {
   const { id } = useParams();
@@ -112,6 +112,12 @@ export default function Thread() {
   return (
     <div className="thread">
       <header className="thread-header">
+        <Link to="/" className="back" aria-label="Back to chats">
+          ←
+        </Link>
+        {conversation && (
+          <Avatar user={conversationAvatarUser(conversation, user)} size={36} />
+        )}
         <h2>{title}</h2>
       </header>
 

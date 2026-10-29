@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
 import Avatar from "../components/Avatar";
+import { Link } from "react-router-dom";
 
 export default function Users() {
   const { token } = useAuth();
@@ -44,6 +45,9 @@ export default function Users() {
 
   return (
     <div className="page">
+      <Link to="/" className="back">
+        ← Chats
+      </Link>
       <h2>Start a chat</h2>
       <input
         type="search"
@@ -52,7 +56,7 @@ export default function Users() {
         onChange={(e) => setSearch(e.target.value)}
       />
       {error && <p role="alert">{error}</p>}
-      <ul>
+      <ul className="user-list">
         {users.map((u) => (
           <li key={u.id}>
             <button onClick={() => startChat(u.id)}>

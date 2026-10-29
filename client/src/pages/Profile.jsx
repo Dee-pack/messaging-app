@@ -3,6 +3,7 @@ import { useAuth } from "../AuthContext";
 import { api } from "../api";
 import Avatar from "../components/Avatar";
 import { resizeToJpeg } from "../utils";
+import { Link } from "react-router-dom";
 
 export default function Profile() {
   const { user, setUser, token } = useAuth();
@@ -84,6 +85,9 @@ export default function Profile() {
 
   return (
     <div className="page">
+      <Link to="/" className="back">
+        ← Chats
+      </Link>
       <h2>Your profile</h2>
 
       <Avatar user={user} size={96} />
@@ -98,7 +102,12 @@ export default function Profile() {
           />
         </label>
         {user.avatarUrl && (
-          <button type="button" onClick={removeAvatar} disabled={uploading}>
+          <button
+            className="secondary"
+            type="button"
+            onClick={removeAvatar}
+            disabled={uploading}
+          >
             Remove photo
           </button>
         )}

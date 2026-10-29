@@ -28,7 +28,7 @@ export default function Register() {
   }
 
   return (
-    <main>
+    <main className="auth">
       <h1>Create an account</h1>
       <form onSubmit={handleSubmit}>
         <label>

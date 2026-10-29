@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
-import Avatar from "./Avatar";
 import { conversationAvatarUser, conversationTitle } from "../utils";
+import Avatar from "./Avatar";
 
 export default function AppLayout() {
   const { user, token, logout } = useAuth();
+  const { pathname } = useLocation();
   const [conversations, setConversations] = useState([]);
 
   const loadConversations = useCallback(async () => {
@@ -24,42 +25,49 @@ export default function AppLayout() {
     return () => clearInterval(interval);
   }, [loadConversations]);
 
+  // On phones: the home route shows the list, every other route shows the page
+  const view = pathname === "/" ? "show-list" : "show-main";
+
   return (
-    <div className="app">
+    <div className={`app ${view}`}>
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="me">
             <Avatar user={user} size={40} />
             <strong>{user.displayName || user.username}</strong>
           </div>
-          <div>
-            <Link to="/users">New chat</Link> ·{" "}
-            <Link to="/profile">Profile</Link> ·{" "}
-            <button onClick={logout}>Log out</button>
-          </div>
+          <nav className="sidebar-nav">
+            <Link to="/users">New chat</Link>
+            <Link to="/profile">Profile</Link>
+            <button className="link-button" onClick={logout}>
+              Log out
+            </button>
+          </nav>
         </div>
 
-        {conversations.length === 0 && (
-          <p className="empty">No conversations yet.</p>
-        )}
+        <div className="conversations">
+          {conversations.length === 0 && (
+            <p className="empty">No conversations yet.</p>
+          )}
 
-        {conversations.map((c) => (
-          <NavLink
-            key={c.id}
-            to={`/chat/${c.id}`}
-            className="conversation-link"
-          >
-            <Avatar user={conversationAvatarUser(c, user)} size={40} />
-            <div className="conversation-text">
-              <div>{conversationTitle(c, user)}</div>
-              <small>
-                {c.lastMessage
-                  ? c.lastMessage.content || "📷 Image"
-                  : "No messages yet"}
-              </small>
-            </div>
-          </NavLink>
-        ))}
+          {conversations.map((c) => (
+            <NavLink
+              key={c.id}
+              to={`/chat/${c.id}`}
+              className="conversation-link"
+            >
+              <Avatar user={conversationAvatarUser(c, user)} size={40} />
+              <div className="conversation-text">
+                <div>{conversationTitle(c, user)}</div>
+                <small>
+                  {c.lastMessage
+                    ? c.lastMessage.content || "📷 Image"
+                    : "No messages yet"}
+                </small>
+              </div>
+            </NavLink>
+          ))}
+        </div>
       </aside>
 
       <section className="main">
