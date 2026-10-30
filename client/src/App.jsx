@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import Thread from "./pages/Thread";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile";
+import NewGroup from "./pages/NewGroup";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="users" element={<Users />} />
           <Route path="profile" element={<Profile />} />
           <Route path="chat/:id" element={<Thread />} />
+          <Route path="groups/new" element={<NewGroup />} />
         </Route>
       </Route>
     </Routes>

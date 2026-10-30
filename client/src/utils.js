@@ -33,3 +33,21 @@ export async function resizeToJpeg(file, maxSize = 512) {
         );
     });
 }
+
+export function memberSummary(conversation, me) {
+    return conversation.participants
+        .map((p) => (p.id === me.id ? "You" : p.displayName || p.username))
+        .join(", ");
+}
+
+// Sidebar preview line; groups say who sent the last message
+export function lastMessagePreview(conversation, me) {
+    const m = conversation.lastMessage;
+    if (!m) return "No messages yet";
+
+    const body = m.content || "📷 Image";
+    if (!conversation.isGroup) return body;
+
+    const who = m.sender.id === me.id ? "You" : m.sender.displayName || m.sender.username;
+    return `${who}: ${body}`;
+}

@@ -71,10 +71,24 @@ router.get("/", async (req, res, next) => {
     }
 });
 
-// POST /conversations  { userId }  ->  start (or reopen) a 1-to-1 chat
+// POST /conversations
+//   1-to-1:  { userId }
+//   group:   { name, userIds: [...] }   (at least 2 other people)
 router.post(
     "/",
-    [body("userId").isInt({ min: 1 }).withMessage("userId is required").toInt()],
+    [
+        body("userId").optional().isInt({ min: 1 }).withMessage("Invalid userId").toInt(),
+        body("userIds")
+            .optional()
+            .isArray({ min: 2, max: 49 })
+            .withMessage("Pick between 2 and 49 people for a group"),
+        body("userIds.*").isInt({ min: 1 }).withMessage("Invalid user id").toInt(),
+        body("name")
+            .optional()
+            .trim()
+            .isLength({ min: 1, max: 50 })
+            .withMessage("Group name must be 1-50 characters"),
+    ],
     async (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -83,8 +97,43 @@ router.post(
 
         try {
             const me = req.user.id;
-            const other = req.body.userId;
 
+            // ----- Group chat -----
+            if (req.body.userIds) {
+                const name = req.body.name;
+                if (!name) {
+                    return res.status(400).json({ errors: ["Give the group a name"] });
+                }
+
+                // De-duplicate, and make sure I'm not counted as one of "the others"
+                const others = [...new Set(req.body.userIds)].filter((id) => id !== me);
+                if (others.length < 2) {
+                    return res.status(400).json({ errors: ["A group needs at least 2 other people"] });
+                }
+
+                const found = await prisma.user.count({ where: { id: { in: others } } });
+                if (found !== others.length) {
+                    return res.status(404).json({ errors: ["One or more users were not found"] });
+                }
+
+                const group = await prisma.conversation.create({
+                    data: {
+                        isGroup: true,
+                        name,
+                        participants: { create: [me, ...others].map((userId) => ({ userId })) },
+                    },
+                });
+
+                return res.status(201).json({ conversation: { id: group.id } });
+            }
+
+            // ----- 1-to-1 chat -----
+            const other = req.body.userId;
+            if (!other) {
+                return res
+                    .status(400)
+                    .json({ errors: ["Provide userId, or a name and userIds for a group"] });
+            }
             if (other === me) {
                 return res.status(400).json({ errors: ["You can't start a chat with yourself"] });
             }
@@ -107,9 +156,7 @@ router.post(
             if (existing) return res.json({ conversation: { id: existing.id } });
 
             const created = await prisma.conversation.create({
-                data: {
-                    participants: { create: [{ userId: me }, { userId: other }] },
-                },
+                data: { participants: { create: [{ userId: me }, { userId: other }] } },
             });
 
             res.status(201).json({ conversation: { id: created.id } });

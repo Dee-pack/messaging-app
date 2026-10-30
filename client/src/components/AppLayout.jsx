@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
-import { conversationAvatarUser, conversationTitle } from "../utils";
+import {
+  conversationAvatarUser,
+  conversationTitle,
+  lastMessagePreview,
+} from "../utils";
 import Avatar from "./Avatar";
 
 const isMobile = () => window.matchMedia("(max-width: 700px)").matches;
@@ -89,6 +93,13 @@ export default function AppLayout() {
               <Link to="/users" className="nav-pill" onClick={closeOnMobile}>
                 New chat
               </Link>
+              <Link
+                to="/groups/new"
+                className="nav-pill"
+                onClick={closeOnMobile}
+              >
+                New group
+              </Link>
               <Link to="/profile" className="nav-pill" onClick={closeOnMobile}>
                 Profile
               </Link>
@@ -117,11 +128,7 @@ export default function AppLayout() {
                 />
                 <div className="conversation-text">
                   <div>{conversationTitle(c, user)}</div>
-                  <small>
-                    {c.lastMessage
-                      ? c.lastMessage.content || "📷 Image"
-                      : "No messages yet"}
-                  </small>
+                  <small>{lastMessagePreview(c, user)}</small>
                 </div>
               </NavLink>
             ))}

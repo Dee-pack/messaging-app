@@ -650,3 +650,52 @@ button.secondary {
     border-radius: 8px;
     object-fit: cover;
 }
+
+.members-text {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.thread-header>div {
+    min-width: 0;
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    flex-shrink: 0;
+    accent-color: var(--primary);
+}
+
+.page form .user-option {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s var(--ease);
+}
+
+.page form .user-option:hover {
+    background: var(--surface);
+}

@@ -7,6 +7,7 @@ import MenuButton from "../components/MenuButton";
 import {
   conversationAvatarUser,
   conversationTitle,
+  memberSummary,
   resizeToJpeg,
 } from "../utils";
 
@@ -172,6 +173,11 @@ export default function Thread() {
         <div>
           <h2>{title}</h2>
           {other?.online && <small className="status-text">Online</small>}
+          {conversation?.isGroup && (
+            <small className="members-text">
+              {memberSummary(conversation, user)}
+            </small>
+          )}
         </div>
       </header>
 
@@ -186,7 +192,7 @@ export default function Thread() {
             key={m.id}
             className={`message ${m.senderId === user.id ? "mine" : ""}`}
           >
-            {m.senderId !== user.id && (
+            {conversation?.isGroup && m.senderId !== user.id && (
               <small className="message-sender">
                 <Avatar user={m.sender} size={20} />{" "}
                 {m.sender.displayName || m.sender.username}
