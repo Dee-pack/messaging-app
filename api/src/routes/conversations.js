@@ -3,6 +3,8 @@ import { body, validationResult } from "express-validator";
 import { prisma } from "../db.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { withPresence } from "../presence.js";
+import { imageUpload } from "../middleware/imageUpload.js";
+import { uploadImage } from "../storage.js";
 
 const router = Router();
 router.use(authenticate);
@@ -148,15 +150,19 @@ router.get("/:id/messages", requireParticipant, async (req, res, next) => {
     }
 });
 
-// POST /conversations/:id/messages  { content }
+// POST /conversations/:id/messages
+//   JSON:       { content }
+//   multipart:  image (file) + optional content (caption)
 router.post(
     "/:id/messages",
-    requireParticipant,
+    requireParticipant, // runs first, so non-members can never upload anything
+    imageUpload("image", 3),
     [
         body("content")
+            .optional()
             .trim()
-            .isLength({ min: 1, max: 2000 })
-            .withMessage("Message must be 1-2000 characters"),
+            .isLength({ max: 2000 })
+            .withMessage("Message can be at most 2000 characters"),
     ],
     async (req, res, next) => {
         const errors = validationResult(req);
@@ -164,10 +170,20 @@ router.post(
             return res.status(400).json({ errors: errors.array().map((e) => e.msg) });
         }
 
+        const content = (req.body.content || "").trim();
+        if (!content && !req.file) {
+            return res.status(400).json({ errors: ["Write a message or attach an image"] });
+        }
+
         try {
+            const imageUrl = req.file
+                ? await uploadImage(req.file, `messages/${req.conversationId}`)
+                : null;
+
             const message = await prisma.message.create({
                 data: {
-                    content: req.body.content,
+                    content: content || null,
+                    imageUrl,
                     senderId: req.user.id, // from the token, never from the request body
                     conversationId: req.conversationId,
                 },

@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useOutletContext, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { api } from "../api";
-import { Link, useOutletContext, useParams } from "react-router-dom";
 import Avatar from "../components/Avatar";
-import { conversationAvatarUser, conversationTitle } from "../utils";
 import MenuButton from "../components/MenuButton";
+import {
+  conversationAvatarUser,
+  conversationTitle,
+  resizeToJpeg,
+} from "../utils";
 
 export default function Thread() {
   const { id } = useParams();
@@ -14,11 +18,13 @@ export default function Thread() {
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("loading"); // loading | ready | notfound
   const [text, setText] = useState("");
+  const [image, setImage] = useState(null); // { file, previewUrl }
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
 
   const lastIdRef = useRef(0);
   const bottomRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Append messages, skipping any we already have. Both polling and
   // sending can deliver the same message, so de-duplicate by id.
@@ -42,6 +48,8 @@ export default function Thread() {
     setMessages([]);
     setStatus("loading");
     setError("");
+    setText("");
+    setImage(null);
     lastIdRef.current = 0;
 
     async function poll() {
@@ -71,26 +79,57 @@ export default function Thread() {
     };
   }, [id, token, addMessages]);
 
+  // Free the preview's memory when it's removed, replaced, or the page closes
+  useEffect(() => {
+    return () => {
+      if (image) URL.revokeObjectURL(image.previewUrl);
+    };
+  }, [image]);
+
   // Scroll to the newest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  function chooseImage(e) {
+    const file = e.target.files[0];
+    e.target.value = ""; // lets you pick the same file again later
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file");
+      return;
+    }
+    setError("");
+    setImage({ file, previewUrl: URL.createObjectURL(file) });
+  }
+
   async function handleSend(e) {
     e.preventDefault();
     const content = text.trim();
-    if (!content) return;
+    if (!content && !image) return;
 
     setSending(true);
     setError("");
     try {
+      let body;
+      if (image) {
+        const blob = await resizeToJpeg(image.file, 1280);
+        body = new FormData();
+        body.append("image", blob, "photo.jpg");
+        if (content) body.append("content", content);
+      } else {
+        body = { content };
+      }
+
       const data = await api(`/conversations/${id}/messages`, {
         method: "POST",
         token,
-        body: { content },
+        body,
       });
       addMessages([data.message]);
       setText("");
+      setImage(null);
       loadConversations();
     } catch (err) {
       setError(err.message);
@@ -153,7 +192,23 @@ export default function Thread() {
                 {m.sender.displayName || m.sender.username}
               </small>
             )}
-            <div>{m.content}</div>
+
+            {m.imageUrl && (
+              <a
+                href={m.imageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="message-image-link"
+              >
+                <img
+                  className="message-image"
+                  src={m.imageUrl}
+                  alt="Shared photo"
+                />
+              </a>
+            )}
+            {m.content && <div>{m.content}</div>}
+
             <small>
               {new Date(m.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -165,18 +220,64 @@ export default function Thread() {
         <div ref={bottomRef} />
       </div>
 
+      {image && (
+        <div className="attachment">
+          <img src={image.previewUrl} alt="Selected photo" />
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => setImage(null)}
+            aria-label="Remove photo"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <form className="composer" onSubmit={handleSend}>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Attach a photo"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={sending}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          </svg>
+        </button>
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={chooseImage}
+          hidden
+        />
+
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Type a message…"
+          placeholder={image ? "Add a caption…" : "Type a message…"}
           maxLength={2000}
         />
-        <button type="submit" disabled={sending || !text.trim()}>
+        <button type="submit" disabled={sending || (!text.trim() && !image)}>
           Send
         </button>
       </form>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p role="alert" className="page">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
